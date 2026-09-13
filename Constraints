@@ -1,0 +1,1651 @@
+## Table of Contents
+
+1. Basic SQL Commands
+2. INSERT Query Variations
+3. SQL Constraints
+4. Primary Key vs Unique Key
+5. Relationships Between Tables
+6. Foreign Key Implementation
+7. Auto Increment
+8. Practical Examples
+9. Interview Questions
+
+---
+
+## 1. Basic SQL Commands
+
+### Command Overview
+
+| Command | Purpose | Syntax |
+| --- | --- | --- |
+| CREATE DATABASE | Create a new database | `CREATE DATABASE database_name;` |
+| SHOW DATABASES | List all databases | `SHOW DATABASES;` |
+| USE | Select a database | `USE database_name;` |
+| CREATE TABLE | Create a table | `CREATE TABLE table_name (columns);` |
+| SHOW TABLES | List all tables in current DB | `SHOW TABLES;` |
+| DESCRIBE | View table structure | `DESCRIBE table_name;` |
+| INSERT INTO | Insert records | `INSERT INTO table_name VALUES (...);` |
+| SELECT | Retrieve records | `SELECT * FROM table_name;` |
+| DROP TABLE | Delete entire table | `DROP TABLE table_name;` |
+
+### Basic Example
+
+```sql
+-- Step 1: Create Database
+CREATE DATABASE university;
+
+-- Step 2: Use Database
+USE university;
+
+-- Step 3: Create Table
+CREATE TABLE student (
+    ID INT,
+    first_name VARCHAR(20),
+    last_name VARCHAR(20),
+    age INT,
+    email VARCHAR(50),
+    branch VARCHAR(10)
+);
+
+-- Step 4: View Table Structure
+DESCRIBE student;
+
+-- Step 5: Insert Data
+INSERT INTO student VALUES (1, 'Ravi', 'Kumar', 20, 'ravi@gmail.com', 'CS');
+
+-- Step 6: Retrieve Data
+SELECT * FROM student;
+
+-- Step 7: Drop Table (if needed)
+DROP TABLE student;
+```
+
+---
+
+## 2. INSERT Query Variations
+
+### Why Multiple Ways of Inserting?
+
+Different use cases require different approaches:
+
+- **Inserting all fields**: When you have all data
+- **Inserting specific fields**: When some data is unavailable
+- **Inserting multiple records**: For bulk operations
+
+### Method 1: Insert All Fields
+
+```sql
+INSERT INTO student VALUES (1, 'Ravi', 'Kumar', 20, 'ravi@gmail.com', 'CS');
+```
+
+**When to use**: When you have all column values
+**Pros**: Simple and straightforward
+**Cons**: Must provide values in exact column order
+
+---
+
+### Method 2: Insert Specific Fields
+
+```sql
+INSERT INTO student (ID, first_name) VALUES (2, 'Kanya');
+```
+
+**When to use**: When some columns are optional or will be filled later
+**Real-world example**:
+
+- User registration form where "Last Name" is optional
+- User can complete profile later
+
+**Result**:
+
+- ID = 2
+- first_name = 'Kanya'
+- last_name = NULL
+- age = NULL
+- email = NULL
+- branch = NULL
+
+---
+
+### Method 3: Insert Multiple Records in One Query
+
+```sql
+INSERT INTO student VALUES
+(3, 'Shashi', 'Kumar', 25, 'shashi@gmail.com', 'EC'),
+(4, 'Balaji', 'Chawan', 25, 'balaji@gmail.com', 'EC');
+```
+
+**When to use**: Bulk insert operations (faster than individual inserts)
+**Pros**:
+
+- Single statement execution
+- Better performance
+- Reduces network round-trips
+
+**Cons**: If one record fails, entire operation may fail
+
+---
+
+### Method 4: Insert with Partial Fields for Multiple Records
+
+```sql
+INSERT INTO student (ID, first_name, age) VALUES
+(5, 'Nagaraja', 22),
+(6, 'Puja', 21);
+```
+
+---
+
+### Key Learning Point
+
+**Insert Query Rule**: You don't have to provide values in the order they appear in the table if you specify column names.
+
+```sql
+-- Both are valid and equivalent
+INSERT INTO student (email, ID, first_name) VALUES ('test@gmail.com', 7, 'Test');
+INSERT INTO student (first_name, ID, email) VALUES ('Test', 7, 'test@gmail.com');
+```
+
+---
+
+## 3. SQL Constraints
+
+### What Are Constraints?
+
+**Definition**: Rules applied to table columns that ensure data integrity and prevent invalid data entry.
+
+**Why are they important?**
+
+- Enforce business rules at database level
+- Prevent invalid data from entering database
+- Ensure data consistency and reliability
+- Reduce application-level validation burden
+
+### Complete List of Constraints
+
+### 3.1 NOT NULL Constraint
+
+**Purpose**: Ensures a column always has a value (cannot be empty)
+
+**Syntax**:
+
+```sql
+CREATE TABLE student (
+    ID INT NOT NULL,
+    first_name VARCHAR(20) NOT NULL,
+    email VARCHAR(50)
+);
+```
+
+**Example**:
+
+```sql
+-- This will FAIL - cannot insert NULL in ID
+INSERT INTO student (first_name, email) VALUES ('Ravi', 'ravi@gmail.com');
+
+-- This will SUCCEED
+INSERT INTO student VALUES (1, 'Ravi', 'ravi@gmail.com');
+```
+
+**Real-world scenario**:
+
+- Student ID must always exist (it's their identifier)
+- First name cannot be empty in a student record
+- Email can be NULL initially (user can add later)
+
+---
+
+### 3.2 UNIQUE Constraint
+
+**Purpose**: Ensures all values in a column are unique (no duplicates)
+
+**Syntax**:
+
+```sql
+CREATE TABLE student (
+    ID INT PRIMARY KEY,
+    email VARCHAR(50) UNIQUE,
+    phone_number VARCHAR(10) UNIQUE
+);
+```
+
+**Important Points**:
+
+- Can have multiple UNIQUE columns in one table
+- Can have NULL values in UNIQUE column (NULL is allowed only once, technically can have multiple NULLs)
+- Different from PRIMARY KEY
+
+**Example**:
+
+```sql
+-- Table has values
+SELECT * FROM student;
+/*
+ID | email              | phone_number
+1  | ravi@gmail.com    | 9876543210
+2  | puja@gmail.com    | 9988776655
+*/
+
+-- This will FAIL - email already exists
+INSERT INTO student VALUES (3, 'ravi@gmail.com', '9111111111');
+
+-- This will SUCCEED - different email
+INSERT INTO student VALUES (3, 'new@gmail.com', '9111111111');
+```
+
+**Multiple UNIQUE columns**:
+
+```sql
+CREATE TABLE user (
+    user_id INT PRIMARY KEY,
+    email VARCHAR(50) UNIQUE,
+    username VARCHAR(30) UNIQUE,
+    phone VARCHAR(10) UNIQUE
+);
+
+-- Each column enforces uniqueness independently
+```
+
+---
+
+### 3.3 PRIMARY KEY Constraint
+
+**Purpose**: Uniquely identifies each record in a table
+
+**Syntax**:
+
+```sql
+CREATE TABLE student (
+    ID INT PRIMARY KEY,
+    first_name VARCHAR(20),
+    email VARCHAR(50)
+);
+```
+
+**Characteristics**:
+
+- Cannot be NULL
+- Must be UNIQUE
+- Only ONE primary key per table
+- Acts as identifier for the record
+- Automatically indexed by database
+
+**Logic Behind PRIMARY KEY**:
+
+```
+PRIMARY KEY = UNIQUE + NOT NULL
+
+In other words:
+PRIMARY KEY enforces both constraints together
+```
+
+**Example**:
+
+```sql
+-- PRIMARY KEY is both unique and not null
+CREATE TABLE student (
+    ID INT PRIMARY KEY,
+    email VARCHAR(50) UNIQUE
+);
+
+-- This will FAIL - NULL value not allowed in primary key
+-- You have to pass the ID 
+INSERT INTO student (email) VALUES ('test@gmail.com');
+-- Error: Field 'ID' doesn't have a default value
+
+-- This will FAIL - Duplicate primary key
+INSERT INTO student VALUES (1, 'ravi@gmail.com');
+INSERT INTO student VALUES (1, 'puja@gmail.com');
+-- Error: Duplicate entry '1' for key 'student.PRIMARY'
+
+-- This will SUCCEED
+INSERT INTO student VALUES (1, 'ravi@gmail.com');
+INSERT INTO student VALUES (2, 'puja@gmail.com');
+```
+
+---
+
+### 3.4 CHECK Constraint
+
+**Purpose**: Ensures values meet a specific condition
+
+**Syntax**:
+
+```sql
+CREATE TABLE student (
+    ID INT PRIMARY KEY,
+    age INT CHECK (age >= 15),
+    salary DECIMAL CHECK (salary > 0)
+);
+```
+
+**Example**:
+
+```sql
+-- This will SUCCEED - age is 20 (>= 15)
+INSERT INTO student VALUES (1, 20);
+
+-- This will FAIL - age is 12 (< 15)
+INSERT INTO student VALUES (2, 12);
+-- Error: Check constraint 'student_chk_1' is violated
+
+-- Real-world examples:
+-- Age must be between 18-65
+CHECK (age >= 18 AND age <= 65)
+
+-- Email must not be empty
+CHECK (LENGTH(email) > 0)
+
+-- Salary must be positive
+CHECK (salary > 0)
+
+-- Percentage must be between 0-100
+CHECK (percentage >= 0 AND percentage <= 100)
+```
+
+---
+
+### 3.5 DEFAULT Constraint
+
+**Purpose**: Provides a default value when no value is specified
+
+**Syntax**:
+
+```sql
+CREATE TABLE student (
+    ID INT PRIMARY KEY,
+    branch VARCHAR(10) DEFAULT 'CS',
+    status VARCHAR(20) DEFAULT 'Active',
+    created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+**Example**:
+
+```sql
+-- Insert without specifying branch
+INSERT INTO student (ID) VALUES (1);
+
+-- Result:
+SELECT * FROM student;
+/*
+ID | branch | status | created_date
+1  | CS     | Active | 2024-01-15 10:30:00
+*/
+
+-- Insert with specific branch (overrides default)
+INSERT INTO student (ID, branch) VALUES (2, 'EC');
+
+-- Result:
+SELECT * FROM student;
+/*
+ID | branch | status | created_date
+2  | EC     | Active | 2024-01-15 10:31:00
+*/
+```
+
+**Real-world scenarios**:
+
+- User account status defaults to 'Active'
+- Department defaults to 'Not Assigned' until assigned
+- Created timestamp auto-set to current time
+- Country defaults to user's country code
+
+---
+
+### 3.6 FOREIGN KEY Constraint
+
+**Purpose**: Creates a relationship between two tables
+**Details**: See detailed section below (Section 6)
+
+---
+
+### Constraints Summary Table
+
+| Constraint | NULL Allowed | Duplicates Allowed | Purpose | Key Point |
+| --- | --- | --- | --- | --- |
+| NOT NULL | No | Yes | Value must exist | Prevents empty fields |
+| UNIQUE | Yes (multiple) | No | All values different | Can have NULL |
+| PRIMARY KEY | No | No | Record identifier | One per table, UNIQUE+NOT NULL |
+| CHECK | Depends | Yes (if passes check) | Value meets condition | Custom validation |
+| DEFAULT | No (has default) | Yes | Provide default value | Auto-filled if empty |
+| FOREIGN KEY | Yes | Yes | Reference another table | Links to parent table |
+
+---
+
+## 4. Primary Key vs Unique Key
+
+### The Most Important Difference
+
+```
+┌─────────────────────────────────────────────────────┐
+│         PRIMARY KEY      │      UNIQUE KEY         │
+├─────────────────────────────────────────────────────┤
+│ Cannot be NULL           │ Can be NULL             │
+│ Only 1 per table         │ Multiple per table      │
+│ Automatically indexed    │ May or may not be indexed│
+│ Uniquely identifies row  │ Just prevents duplicates│
+│ Used for relationships   │ Used for uniqueness     │
+└─────────────────────────────────────────────────────┘
+```
+
+### Detailed Comparison
+
+### Example 1: Basic Difference
+
+```sql
+CREATE TABLE employee (
+    emp_id INT PRIMARY KEY,          -- Cannot be NULL, must be unique
+    email VARCHAR(50) UNIQUE,         -- Can be NULL, must be unique
+    phone VARCHAR(10) UNIQUE          -- Can be NULL, must be unique
+);
+
+-- Valid insertions:
+INSERT INTO employee VALUES (1, 'ravi@gmail.com', '9876543210');
+INSERT INTO employee VALUES (2, 'puja@gmail.com', NULL);        -- NULL email allowed
+INSERT INTO employee VALUES (3, NULL, '9988776655');            -- NULL phone allowed
+
+-- Invalid insertions:
+INSERT INTO employee VALUES (1, 'new@gmail.com', '9111111111'); -- Duplicate primary key
+INSERT INTO employee VALUES (4, 'ravi@gmail.com', '9222222222');-- Duplicate email
+```
+
+### Example 2: NULL Handling
+
+```sql
+CREATE TABLE student (
+    ID INT PRIMARY KEY,
+    aadhar_number VARCHAR(12) UNIQUE  -- Optional field
+);
+
+-- This will FAIL
+INSERT INTO student VALUES (NULL, '123456789012');
+-- Error: PRIMARY KEY cannot be NULL
+
+-- This will SUCCEED (multiple NULLs in UNIQUE allowed)
+INSERT INTO student VALUES (1, NULL);
+INSERT INTO student VALUES (2, NULL);
+INSERT INTO student VALUES (3, NULL);
+
+SELECT * FROM student;
+/*
+ID | aadhar_number
+1  | NULL
+2  | NULL
+3  | NULL
+*/
+```
+
+### Example 3: Real-World Scenario
+
+```sql
+-- Student database
+CREATE TABLE student (
+    student_id INT PRIMARY KEY,           -- Must have, uniquely identifies student
+    email VARCHAR(50) UNIQUE NOT NULL,    -- Email is unique for login
+    phone VARCHAR(10) UNIQUE,             -- Phone is optional but unique if provided
+    aadhar VARCHAR(12) UNIQUE,            -- Optional government ID
+    name VARCHAR(50) NOT NULL
+);
+
+INSERT INTO student VALUES
+(1, 'ravi@college.edu', '9876543210', '123456789012', 'Ravi Kumar'),
+(2, 'puja@college.edu', '9988776655', NULL, 'Puja Singh'),           -- No Aadhar yet
+(3, 'akash@college.edu', NULL, '987654321098', 'Akash Sharma');      -- Will update phone later
+```
+
+---
+
+## 5. Relationships Between Tables
+
+### Three Types of Relationships
+
+### 5.1 One-to-One (1:1) Relationship
+
+**Definition**: One record in Table A is associated with exactly one record in Table B, and vice versa
+
+**Example**: Person and Passport
+
+```
+PERSON                  PASSPORT
+┌──────────┐           ┌──────────┐
+│ ID (PK)  │─────|─────│  ID (FK) │
+│ Name     │ 1      1  │ Passport │
+│ DOB      │           │Issue Date|
+└──────────┘           └──────────┘
+
+One person has exactly one passport
+One passport belongs to exactly one person
+```
+
+**SQL Implementation**:
+
+```sql
+CREATE TABLE person (
+    person_id INT PRIMARY KEY,
+    name VARCHAR(50),
+    date_of_birth DATE
+);
+
+CREATE TABLE passport (
+    passport_id INT PRIMARY KEY,
+    person_id INT UNIQUE,  -- UNIQUE makes it one-to-one
+    passport_number VARCHAR(20),
+    issue_date DATE,
+    FOREIGN KEY (person_id) REFERENCES person(person_id)
+);
+```
+
+**Why UNIQUE on Foreign Key?**
+
+```
+Without UNIQUE: One person can have multiple passports (one-to-many)
+With UNIQUE: One person can have only one passport (one-to-one)
+```
+
+---
+
+### 5.2 One-to-Many (1:N) Relationship
+
+**Definition**: One record in Table A is associated with multiple records in Table B, but each record in Table B is associated with only one record in Table A
+
+**Example**: Department and Faculty
+
+```
+DEPARTMENT              FACULTY
+┌──────────┐           ┌──────────┐
+│ D_ID (PK)│───┐   ┌──│ F_ID (PK)│
+│ D_Name   │   │   │  │ F_Name   │
+└──────────┘   │   │  │ D_ID (FK)│
+               └───┼──┴──────────┘
+                   │
+            One department has many faculty
+            Each faculty belongs to one department
+```
+
+**Real-world examples**:
+
+- One university has many departments
+- One department has many courses
+- One teacher has many students (in different classes)
+- One course has many students (enrolled)
+
+**SQL Implementation**:
+
+```sql
+-- Step 1: Create Parent Table (Department)
+CREATE TABLE department (
+    dept_id INT PRIMARY KEY,
+    dept_name VARCHAR(50)
+);
+
+-- Step 2: Create Child Table (Faculty) with Foreign Key
+CREATE TABLE faculty (
+    faculty_id INT PRIMARY KEY,
+    faculty_name VARCHAR(50),
+    email VARCHAR(50),
+    dept_id INT,
+    FOREIGN KEY (dept_id) REFERENCES department(dept_id)
+);
+```
+
+**Detailed Example**:
+
+```sql
+-- Insert departments (parent table first)
+INSERT INTO department VALUES
+(201, 'Computer Science'),
+(202, 'Electronics'),
+(203, 'Mechanical');
+
+-- Insert faculty (referencing departments)
+INSERT INTO faculty VALUES
+(1, 'Dr. Rajesh', 'rajesh@university.edu', 201),
+(2, 'Dr. Priya', 'priya@university.edu', 201),
+(3, 'Dr. Amit', 'amit@university.edu', 202),
+(4, 'Dr. Anita', 'anita@university.edu', 203);
+
+-- Query result:
+SELECT f.faculty_name, d.dept_name
+FROM faculty f
+JOIN department d ON f.dept_id = d.dept_id;
+
+/*
+faculty_name | dept_name
+Dr. Rajesh   | Computer Science
+Dr. Priya    | Computer Science
+Dr. Amit     | Electronics
+Dr. Anita    | Mechanical
+*/
+```
+
+**Key Point**: Foreign Key is placed in the "Many" side (faculty table)
+
+---
+
+### 5.3 Many-to-Many (M:N) Relationship
+
+**Definition**: One record in Table A can be associated with multiple records in Table B, and vice versa
+
+**Example**: Student and Course
+
+```
+STUDENT                STUDENT_COURSE         COURSE
+┌──────────┐          ┌────────────────┐     ┌──────────┐
+│ S_ID(PK) │──────┬──│ S_ID (FK)      │     │ C_ID(PK) │
+│ S_Name   │      │  │ C_ID (FK)      │──┬──│ C_Name   │
+└──────────┘      │  │ Primary Key:   │  │  └──────────┘
+                  │  │ (S_ID, C_ID)   │  │
+                  └──┴────────────────┘  │
+                     │                     │
+         One student takes many courses   │
+         One course has many students ────┘
+```
+
+**Real-world examples**:
+
+- Students can take multiple courses, each course has multiple students
+- Books and Authors (one book by multiple authors, one author writes multiple books)
+- Employees and Projects (one employee works on multiple projects, each project has multiple employees)
+
+**Why need a separate table?**
+
+```
+Problem: Can't directly represent M:N with just student and course tables
+Solution: Create a junction/bridge/linking table (student_course)
+           This table stores the relationship between them
+```
+
+**SQL Implementation**:
+
+```sql
+-- Step 1: Create Student Table
+CREATE TABLE student (
+    student_id INT PRIMARY KEY,
+    student_name VARCHAR(50)
+);
+
+-- Step 2: Create Course Table
+CREATE TABLE course (
+    course_id INT PRIMARY KEY,
+    course_title VARCHAR(50),
+    credit_hours INT
+);
+
+-- Step 3: Create Junction Table (Student_Course)
+CREATE TABLE student_course (
+    student_id INT,
+    course_id INT,
+    PRIMARY KEY (student_id, course_id),  -- Composite Primary Key
+    FOREIGN KEY (student_id) REFERENCES student(student_id),
+    FOREIGN KEY (course_id) REFERENCES course(course_id)
+);
+```
+
+**Detailed Example**:
+
+```sql
+-- Insert Students
+INSERT INTO student VALUES
+(1, 'Ravi Kumar'),
+(2, 'Puja Singh'),
+(3, 'Akash Sharma');
+
+-- Insert Courses
+INSERT INTO course VALUES
+(101, 'Java Programming', 5),
+(102, 'Python Programming', 4),
+(103, 'C++ Programming', 3);
+
+-- Insert Enrollments (Many-to-Many relationships)
+INSERT INTO student_course VALUES
+(1, 101),  -- Ravi takes Java
+(1, 102),  -- Ravi takes Python
+(2, 101),  -- Puja takes Java
+(2, 103),  -- Puja takes C++
+(3, 102),  -- Akash takes Python
+(3, 103);  -- Akash takes C++
+
+-- Query: Show all courses a student is taking
+SELECT s.student_name, c.course_title
+FROM student s
+JOIN student_course sc ON s.student_id = sc.student_id
+JOIN course c ON sc.course_id = c.course_id
+WHERE s.student_id = 1;
+
+/*
+student_name | course_title
+Ravi Kumar   | Java Programming
+Ravi Kumar   | Python Programming
+*/
+
+-- Query: Show all students in a course
+SELECT s.student_name, c.course_title
+FROM student s
+JOIN student_course sc ON s.student_id = sc.student_id
+JOIN course c ON sc.course_id = c.course_id
+WHERE c.course_id = 101;
+
+/*
+student_name | course_title
+Ravi Kumar   | Java Programming
+Puja Singh   | Java Programming
+*/
+```
+
+---
+
+## 6. Foreign Key Implementation
+
+### What is a Foreign Key?
+
+**Definition**: A column in one table that references the primary key of another table, creating a link between the two tables.
+
+**Purpose**:
+
+- Maintain referential integrity
+- Prevent orphaned records
+- Enforce relationships between tables
+- Ensure data consistency
+
+### Parent Table vs Child Table
+
+```
+Parent Table (Referenced Table)
+├─ Has the Primary Key
+└─ Exists first
+
+        │
+        │ Referenced by
+        ↓
+
+Child Table (Referencing Table)
+├─ Has the Foreign Key
+├─ References parent's primary key
+└─ Depends on parent table
+```
+
+### Rules for Foreign Keys
+
+### Rule 1: Create Parent Table First
+
+```sql
+-- CORRECT ORDER:
+
+-- Step 1: Create parent (department)
+CREATE TABLE department (
+    dept_id INT PRIMARY KEY,
+    dept_name VARCHAR(50)
+);
+
+-- Step 2: Create child (faculty) - references department
+CREATE TABLE faculty (
+    faculty_id INT PRIMARY KEY,
+    faculty_name VARCHAR(50),
+    dept_id INT,
+    FOREIGN KEY (dept_id) REFERENCES department(dept_id)
+);
+
+-- WRONG ORDER (will cause error):
+-- If you try to create faculty before department,
+-- it will fail because department doesn't exist yet
+```
+
+### Rule 2: Cannot Insert Child Record Without Valid Parent Record
+
+```sql
+-- If department table is empty
+INSERT INTO faculty VALUES (1, 'Dr. Rajesh', 201);
+-- ERROR: Cannot add or update child row:
+-- foreign key constraint fails - no dept_id = 201 in department table
+
+-- First insert into department
+INSERT INTO department VALUES (201, 'CS');
+
+-- Now insert into faculty (will succeed)
+INSERT INTO faculty VALUES (1, 'Dr. Rajesh', 201);
+```
+
+### Rule 3: Cannot Delete Parent if Children Exist
+
+```sql
+-- If we try to delete a department that has faculty
+DELETE FROM department WHERE dept_id = 201;
+-- ERROR: Cannot delete or update parent row:
+-- foreign key constraint fails - faculty records still reference this department
+
+-- Solution: Delete child records first
+DELETE FROM faculty WHERE dept_id = 201;
+DELETE FROM department WHERE dept_id = 201;
+```
+
+### Syntax and Examples
+
+### Simple Foreign Key (One-to-Many)
+
+```sql
+CREATE TABLE faculty (
+    faculty_id INT PRIMARY KEY,
+    faculty_name VARCHAR(50),
+    dept_id INT,
+    FOREIGN KEY (dept_id) REFERENCES department(dept_id)
+);
+```
+
+**Breakdown**:
+
+```
+FOREIGN KEY (dept_id)           -- Column that is foreign key
+REFERENCES department(dept_id)  -- References this column in this table
+```
+
+### Composite Foreign Key (Many-to-Many)
+
+```sql
+CREATE TABLE student_course (
+    student_id INT,
+    course_id INT,
+    enrollment_date DATE,
+    grade VARCHAR(2),
+
+    -- Composite Primary Key
+    PRIMARY KEY (student_id, course_id),
+
+    -- Foreign Key 1: References student
+    FOREIGN KEY (student_id) REFERENCES student(student_id),
+
+    -- Foreign Key 2: References course
+    FOREIGN KEY (course_id) REFERENCES course(course_id)
+);
+```
+
+### Multiple Foreign Keys in One Table
+
+```sql
+CREATE TABLE enrollment (
+    enrollment_id INT PRIMARY KEY,
+    student_id INT,
+    course_id INT,
+    semester_id INT,
+    grade VARCHAR(2),
+
+    -- Multiple foreign keys
+    FOREIGN KEY (student_id) REFERENCES student(student_id),
+    FOREIGN KEY (course_id) REFERENCES course(course_id),
+    FOREIGN KEY (semester_id) REFERENCES semester(semester_id)
+);
+```
+
+### Complete Many-to-Many Example
+
+```sql
+-- STEP 1: Create Table 1
+CREATE TABLE student (
+    student_id INT PRIMARY KEY,
+    student_name VARCHAR(50)
+);
+
+-- STEP 2: Create Table 2
+CREATE TABLE course (
+    course_code INT PRIMARY KEY,
+    course_title VARCHAR(50),
+    credit INT
+);
+
+-- STEP 3: Create Junction Table
+CREATE TABLE student_course (
+    student_id INT,
+    course_code INT,
+
+    -- Composite Primary Key (ensures no duplicate enrollments)
+    PRIMARY KEY (student_id, course_code),
+
+    -- Foreign Keys
+    FOREIGN KEY (student_id) REFERENCES student(student_id),
+    FOREIGN KEY (course_code) REFERENCES course(course_code)
+);
+
+-- STEP 4: Insert Parent Records
+INSERT INTO student VALUES
+(1, 'Akash'),
+(2, 'Puja');
+
+INSERT INTO course VALUES
+(101, 'Java', 5),
+(102, 'Python', 4),
+(103, 'C++', 3);
+
+-- STEP 5: Insert Child Records (Relationships)
+INSERT INTO student_course VALUES
+(1, 101),  -- Akash takes Java
+(1, 102),  -- Akash takes Python
+(2, 101),  -- Puja takes Java
+(2, 103);  -- Puja takes C++
+
+-- STEP 6: Query to verify relationships
+SELECT s.student_name, c.course_title
+FROM student s
+JOIN student_course sc ON s.student_id = sc.student_id
+JOIN course c ON sc.course_code = c.course_code;
+
+/*
+student_name | course_title
+Akash        | Java
+Akash        | Python
+Puja         | Java
+Puja         | C++
+*/
+```
+
+---
+
+## 7. Auto Increment
+
+### What is Auto Increment?
+
+**Definition**: A mechanism that automatically generates unique numbers for a column (usually primary key) when new records are inserted.
+
+**Purpose**:
+
+- Generate unique IDs automatically
+- Eliminate manual ID assignment
+- Prevent duplicate IDs
+- Simplify data insertion
+
+### Real-World Scenarios
+
+**Without Auto Increment (Manual Process)**:
+
+```
+User Registration: You enter ID manually
+├─ User 1: "Let me think... I'll put ID as 1"
+├─ User 2: "What ID should I use? Let me check... 2"
+└─ User 3: "This is tedious, and error-prone"
+
+Problems:
+✗ User might forget what the last ID was
+✗ User might enter duplicate ID
+✗ User burden and time-consuming
+```
+
+**With Auto Increment (Automatic Process)**:
+
+```
+User Registration: System auto-generates ID
+├─ User 1: Automatically assigned ID = 1
+├─ User 2: Automatically assigned ID = 2
+└─ User 3: Automatically assigned ID = 3
+
+Benefits:
+✓ No manual tracking needed
+✓ No duplicates possible
+✓ Faster and easier
+✓ Real-world standard practice
+```
+
+### Syntax and Implementation
+
+### Basic Auto Increment
+
+```sql
+CREATE TABLE person (
+    person_id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(50),
+    email VARCHAR(50)
+);
+```
+
+**Important Rules**:
+
+1. Column must be INTEGER type (INT, BIGINT, etc.)
+2. Column must be PRIMARY KEY (or at least UNIQUE)
+3. Only one AUTO_INCREMENT column per table
+
+### How to Insert with Auto Increment
+
+```sql
+-- Method 1: Omit the auto-increment column
+INSERT INTO person (name, email) VALUES
+('Puja', 'puja@gmail.com'),
+('Ravi', 'ravi@gmail.com'),
+('Akash', 'akash@gmail.com');
+
+-- Result:
+SELECT * FROM person;
+/*
+person_id | name  | email
+1         | Puja  | puja@gmail.com
+2         | Ravi  | ravi@gmail.com
+3         | Akash | akash@gmail.com
+*/
+
+-- Method 2: Explicitly provide 0 (MySQL auto-increments)
+INSERT INTO person VALUES (0, 'Nikita', 'nikita@gmail.com');
+-- Result: person_id becomes 4 automatically
+
+-- Method 3: Use NULL (also auto-increments)
+INSERT INTO person VALUES (NULL, 'Sushma', 'sushma@gmail.com');
+-- Result: person_id becomes 5 automatically
+```
+
+### Complete Example
+
+```sql
+-- Create table with auto-increment
+CREATE TABLE user (
+    user_id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(30) UNIQUE NOT NULL,
+    email VARCHAR(50) UNIQUE NOT NULL,
+    registration_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Insert records (IDs auto-generated)
+INSERT INTO user (username, email) VALUES
+('john_doe', 'john@gmail.com'),
+('jane_smith', 'jane@gmail.com'),
+('mike_wilson', 'mike@gmail.com');
+
+-- View the inserted records
+SELECT * FROM user;
+/*
+user_id | username    | email           | registration_date
+1       | john_doe    | john@gmail.com  | 2024-01-15 10:30:00
+2       | jane_smith  | jane@gmail.com  | 2024-01-15 10:31:00
+3       | mike_wilson | mike@gmail.com  | 2024-01-15 10:32:00
+*/
+
+-- Next insertion automatically gets ID 4
+INSERT INTO user (username, email) VALUES ('sarah_jones', 'sarah@gmail.com');
+-- Result: user_id = 4 (automatic)
+```
+
+### Key Differences: With vs Without Auto Increment
+
+| Aspect | Without Auto Increment | With Auto Increment |
+| --- | --- | --- |
+| ID Entry | Manual | Automatic |
+| Duplicate Risk | High | None |
+| User Error | Possible | Impossible |
+| Speed | Slower | Faster |
+| Complexity | Higher | Lower |
+| Real-world Use | Rare | Standard |
+
+---
+
+## 8. Practical Examples
+
+### Example 1: Student Management System (One-to-Many)
+
+```sql
+-- Create University Database
+CREATE DATABASE university;
+USE university;
+
+-- Create Department Table (Parent)
+CREATE TABLE department (
+    dept_id INT PRIMARY KEY,
+    dept_name VARCHAR(50) NOT NULL,
+    building VARCHAR(20)
+);
+
+-- Create Student Table (Child)
+CREATE TABLE student (
+    student_id INT AUTO_INCREMENT PRIMARY KEY,
+    first_name VARCHAR(30) NOT NULL,
+    last_name VARCHAR(30),
+    email VARCHAR(50) UNIQUE NOT NULL,
+    age INT CHECK (age >= 15),
+    dept_id INT,
+    enrollment_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (dept_id) REFERENCES department(dept_id)
+);
+
+-- Create Courses Table
+CREATE TABLE course (
+    course_id INT AUTO_INCREMENT PRIMARY KEY,
+    course_name VARCHAR(50) NOT NULL,
+    credit_hours INT CHECK (credit_hours > 0),
+    dept_id INT,
+    FOREIGN KEY (dept_id) REFERENCES department(dept_id)
+);
+
+-- Create Enrollment Table (Many-to-Many)
+CREATE TABLE enrollment (
+    student_id INT,
+    course_id INT,
+    semester VARCHAR(10),
+    grade VARCHAR(2),
+
+    PRIMARY KEY (student_id, course_id, semester),
+    FOREIGN KEY (student_id) REFERENCES student(student_id),
+    FOREIGN KEY (course_id) REFERENCES course(course_id)
+);
+
+-- Insert Departments
+INSERT INTO department VALUES
+(1, 'Computer Science', 'BuildingA'),
+(2, 'Electronics', 'BuildingB'),
+(3, 'Mechanical', 'BuildingC');
+
+-- Insert Students
+INSERT INTO student (first_name, last_name, email, age, dept_id) VALUES
+('Ravi', 'Kumar', 'ravi@university.edu', 20, 1),
+('Puja', 'Singh', 'puja@university.edu', 19, 1),
+('Akash', 'Sharma', 'akash@university.edu', 21, 2),
+('Nikita', 'Verma', 'nikita@university.edu', 20, 1);
+
+-- Insert Courses
+INSERT INTO course (course_name, credit_hours, dept_id) VALUES
+('Java Programming', 5, 1),
+('Python Programming', 4, 1),
+('Web Development', 5, 1),
+('Digital Logic', 3, 2),
+('Circuit Design', 4, 2);
+
+-- Insert Enrollments
+INSERT INTO enrollment VALUES
+(1, 1, 'Sem1', 'A'),
+(1, 2, 'Sem1', 'B+'),
+(2, 1, 'Sem1', 'A'),
+(2, 3, 'Sem1', 'A+'),
+(3, 4, 'Sem1', 'B'),
+(3, 5, 'Sem1', 'B+'),
+(4, 1, 'Sem1', 'A-');
+
+-- Query: Show student enrollments
+SELECT s.first_name, s.last_name, c.course_name, e.grade
+FROM student s
+JOIN enrollment e ON s.student_id = e.student_id
+JOIN course c ON e.course_id = c.course_id
+WHERE s.dept_id = 1
+ORDER BY s.first_name;
+
+/*
+first_name | last_name | course_name          | grade
+Nikita     | Verma     | Java Programming     | A
+Nikita     | Verma     | Python Programming   | -
+Nikita     | Verma     | Web Development      | A+
+Puja       | Singh     | Java Programming     | A
+Ravi       | Kumar     | Java Programming     | A
+Ravi       | Kumar     | Python Programming   | B+
+*/
+```
+
+### Example 2: Company Structure (Multiple Foreign Keys)
+
+```sql
+CREATE DATABASE company;
+USE company;
+
+-- Department Table
+CREATE TABLE department (
+    dept_id INT PRIMARY KEY,
+    dept_name VARCHAR(50) NOT NULL,
+    manager_id INT
+);
+
+-- Employee Table
+CREATE TABLE employee (
+    emp_id INT AUTO_INCREMENT PRIMARY KEY,
+    emp_name VARCHAR(50) NOT NULL,
+    email VARCHAR(50) UNIQUE NOT NULL,
+    phone VARCHAR(10) UNIQUE,
+    salary DECIMAL(10, 2) CHECK (salary > 0),
+    dept_id INT NOT NULL,
+    manager_id INT,
+
+    FOREIGN KEY (dept_id) REFERENCES department(dept_id),
+    FOREIGN KEY (manager_id) REFERENCES employee(emp_id)
+);
+
+-- Project Table
+CREATE TABLE project (
+    project_id INT PRIMARY KEY,
+    project_name VARCHAR(100) NOT NULL,
+    budget DECIMAL(12, 2),
+    dept_id INT NOT NULL,
+
+    FOREIGN KEY (dept_id) REFERENCES department(dept_id)
+);
+
+-- Project Assignment Table (Many-to-Many)
+CREATE TABLE project_assignment (
+    emp_id INT,
+    project_id INT,
+    hours_allocated INT CHECK (hours_allocated > 0),
+
+    PRIMARY KEY (emp_id, project_id),
+    FOREIGN KEY (emp_id) REFERENCES employee(emp_id),
+    FOREIGN KEY (project_id) REFERENCES project(project_id)
+);
+
+-- Insert Departments
+INSERT INTO department VALUES
+(10, 'IT', NULL),
+(20, 'HR', NULL),
+(30, 'Finance', NULL);
+
+-- Insert Employees
+INSERT INTO employee (emp_name, email, phone, salary, dept_id, manager_id) VALUES
+('Rajesh Kumar', 'rajesh@company.com', '9876543210', 80000, 10, NULL),
+('Priya Singh', 'priya@company.com', '9988776655', 60000, 10, 1),
+('Amit Patel', 'amit@company.com', '9111111111', 65000, 10, 1),
+('Anita Sharma', 'anita@company.com', '9222222222', 50000, 20, NULL),
+('Vikram Gupta', 'vikram@company.com', '9333333333', 55000, 30, NULL);
+
+-- Insert Projects
+INSERT INTO project VALUES
+(1001, 'Mobile App Development', 500000, 10),
+(1002, 'Website Redesign', 300000, 10),
+(1003, 'HR System Implementation', 200000, 20);
+
+-- Insert Project Assignments
+INSERT INTO project_assignment VALUES
+(1, 1001, 40),
+(2, 1001, 35),
+(3, 1002, 40),
+(2, 1002, 20);
+
+-- Query: Show team hierarchy
+SELECT e.emp_name, e.salary, d.dept_name,
+       (SELECT emp_name FROM employee WHERE emp_id = e.manager_id) AS manager_name
+FROM employee e
+JOIN department d ON e.dept_id = d.dept_id
+ORDER BY d.dept_id, e.emp_name;
+
+/*
+emp_name        | salary | dept_name | manager_name
+Rajesh Kumar    | 80000  | IT        | (NULL)
+Amit Patel      | 65000  | IT        | Rajesh Kumar
+Priya Singh     | 60000  | IT        | Rajesh Kumar
+Anita Sharma    | 50000  | HR        | (NULL)
+Vikram Gupta    | 55000  | Finance   | (NULL)
+*/
+```
+
+---
+
+## 9. Interview Questions and Answers
+
+### Q1: What is the difference between PRIMARY KEY and UNIQUE KEY?
+
+**Answer**:
+
+```
+PRIMARY KEY:
+✓ Cannot be NULL
+✓ Only one per table
+✓ Uniquely identifies each record
+✓ Automatically indexed
+✓ Used for relationships (Foreign Key references)
+
+UNIQUE KEY:
+✓ Can be NULL (multiple NULLs allowed)
+✓ Multiple per table
+✓ Just ensures uniqueness
+✓ May or may not be indexed
+✓ Cannot be referenced by Foreign Key
+
+Key Difference:
+PRIMARY KEY = UNIQUE + NOT NULL
+```
+
+**Example**:
+
+```sql
+CREATE TABLE user (
+    user_id INT PRIMARY KEY,           -- Cannot be NULL
+    email VARCHAR(50) UNIQUE,          -- Can be NULL
+    phone VARCHAR(10) UNIQUE NOT NULL  -- Can be UNIQUE and NOT NULL
+);
+```
+
+---
+
+### Q2: Explain Foreign Key and its importance.
+
+**Answer**:
+
+```
+Foreign Key:
+- A column that references the primary key of another table
+- Creates a relationship between two tables
+- Maintains referential integrity
+
+Importance:
+1. Data Integrity: Ensures related data stays consistent
+2. Prevents Orphaned Records: Can't insert child without parent
+3. Enforces Relationships: Implements database relationships
+4. Business Rules: Encodes business logic at database level
+5. Cascading Operations: Can delete/update related records
+
+Syntax:
+FOREIGN KEY (child_column) REFERENCES parent_table(parent_column)
+```
+
+**Example**:
+
+```sql
+CREATE TABLE department (
+    dept_id INT PRIMARY KEY,
+    dept_name VARCHAR(50)
+);
+
+CREATE TABLE faculty (
+    faculty_id INT PRIMARY KEY,
+    faculty_name VARCHAR(50),
+    dept_id INT,
+    FOREIGN KEY (dept_id) REFERENCES department(dept_id)
+);
+
+-- Without this foreign key:
+-- Could insert faculty with non-existent dept_id
+-- Could delete department while faculty still references it
+-- No referential integrity
+
+-- With foreign key:
+-- Can only insert valid dept_id values
+-- Cannot delete department if faculty exists
+-- Maintains data integrity
+```
+
+---
+
+### Q3: What are the three types of relationships in databases? Explain with examples.
+
+**Answer**:
+
+**1. One-to-One (1:1)**
+
+```
+Definition: One record in Table A = One record in Table B
+
+Example: Person-Passport
+┌─────────┐     ┌─────────┐
+│ Person  │────│ Passport│
+└─────────┘     └─────────┘
+One person has one passport
+One passport belongs to one person
+
+SQL:
+CREATE TABLE person (
+    person_id INT PRIMARY KEY,
+    name VARCHAR(50)
+);
+
+CREATE TABLE passport (
+    passport_id INT PRIMARY KEY,
+    person_id INT UNIQUE,  -- UNIQUE ensures 1:1
+    passport_number VARCHAR(20),
+    FOREIGN KEY (person_id) REFERENCES person(person_id)
+);
+```
+
+**2. One-to-Many (1:N)**
+
+```
+Definition: One record in Table A = Multiple records in Table B
+            But each record in Table B = One record in Table A
+
+Example: Department-Faculty
+┌────────────┐        ┌────────┐
+│ Department │───────│ Faculty│ (multiple)
+└────────────┘        └────────┘
+One department has many faculty
+Each faculty belongs to one department
+
+SQL:
+CREATE TABLE department (
+    dept_id INT PRIMARY KEY,
+    dept_name VARCHAR(50)
+);
+
+CREATE TABLE faculty (
+    faculty_id INT PRIMARY KEY,
+    faculty_name VARCHAR(50),
+    dept_id INT,
+    FOREIGN KEY (dept_id) REFERENCES department(dept_id)
+);
+
+Foreign key goes in the "Many" side (faculty table)
+```
+
+**3. Many-to-Many (M:N)**
+
+```
+Definition: One record in Table A = Multiple records in Table B
+            One record in Table B = Multiple records in Table A
+
+Example: Student-Course
+┌─────────┐        ┌──────────────┐        ┌────────┐
+│ Student │───────│ Student_Course│───────│ Course │
+└─────────┘        └──────────────┘        └────────┘
+One student takes many courses
+One course has many students
+
+SQL:
+CREATE TABLE student (
+    student_id INT PRIMARY KEY,
+    student_name VARCHAR(50)
+);
+
+CREATE TABLE course (
+    course_id INT PRIMARY KEY,
+    course_name VARCHAR(50)
+);
+
+CREATE TABLE student_course (
+    student_id INT,
+    course_id INT,
+    PRIMARY KEY (student_id, course_id),  -- Composite key
+    FOREIGN KEY (student_id) REFERENCES student(student_id),
+    FOREIGN KEY (course_id) REFERENCES course(course_id)
+);
+
+Requires a junction/bridge table with foreign keys to both tables
+```
+
+---
+
+### Q4: When should you use AUTO_INCREMENT? Explain with real-world example.
+
+**Answer**:
+
+```
+When to use AUTO_INCREMENT:
+1. Primary Key generation (most common use)
+2. Need unique sequential IDs
+3. Want to avoid manual ID management
+4. Creating user accounts, records, transactions
+
+Why use it:
+✓ Automatic ID generation
+✓ No duplicate IDs possible
+✓ Reduces application burden
+✓ Standard practice in real applications
+✓ Better performance
+```
+
+**Real-world Example**:
+
+```sql
+-- E-commerce Order System
+
+CREATE TABLE customer (
+    customer_id INT AUTO_INCREMENT PRIMARY KEY,
+    customer_name VARCHAR(50),
+    email VARCHAR(50) UNIQUE,
+    phone VARCHAR(10) UNIQUE
+);
+
+CREATE TABLE order_table (
+    order_id INT AUTO_INCREMENT PRIMARY KEY,
+    customer_id INT,
+    order_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    total_amount DECIMAL(10, 2),
+    status VARCHAR(20) DEFAULT 'Pending',
+    FOREIGN KEY (customer_id) REFERENCES customer(customer_id)
+);
+
+-- When customer registers:
+INSERT INTO customer (customer_name, email, phone) VALUES
+('Ravi Kumar', 'ravi@email.com', '9876543210');
+-- customer_id automatically becomes 1
+
+-- When another customer registers:
+INSERT INTO customer (customer_name, email, phone) VALUES
+('Puja Singh', 'puja@email.com', '9988776655');
+-- customer_id automatically becomes 2
+
+-- When order is placed:
+INSERT INTO order_table (customer_id, total_amount) VALUES (1, 5000);
+-- order_id automatically becomes 1
+
+-- Benefits:
+-- 1. No manual ID tracking
+-- 2. Each order gets unique ID automatically
+-- 3. Cannot have duplicate order IDs
+-- 4. Fast and efficient
+```
+
+---
+
+### Q5: Explain the order of operations when dealing with foreign keys.
+
+**Answer**:
+
+```
+Order of Operations:
+
+1. CREATE PARENT TABLE FIRST
+   CREATE TABLE department (
+       dept_id INT PRIMARY KEY,
+       dept_name VARCHAR(50)
+   );
+
+2. CREATE CHILD TABLE (with foreign key)
+   CREATE TABLE faculty (
+       faculty_id INT PRIMARY KEY,
+       faculty_name VARCHAR(50),
+       dept_id INT,
+       FOREIGN KEY (dept_id) REFERENCES department(dept_id)
+   );
+
+3. INSERT INTO PARENT TABLE FIRST
+   INSERT INTO department VALUES (201, 'CS');
+
+4. INSERT INTO CHILD TABLE
+   INSERT INTO faculty VALUES (1, 'Dr. Rajesh', 201);
+
+5. DELETE CHILD RECORDS FIRST
+   DELETE FROM faculty WHERE dept_id = 201;
+
+6. DELETE PARENT RECORDS
+   DELETE FROM department WHERE dept_id = 201;
+
+Why this order?
+- Parent must exist before child references it
+- Child depends on parent, not vice versa
+- Cannot delete parent if children reference it
+- Following this ensures referential integrity
+```
+
+---
+
+### Q6: What are constraints? List all types and explain each.
+
+**Answer**:
+
+```
+Constraints are rules applied to table columns that ensure
+data integrity and prevent invalid data entry.
+
+Types:
+
+1. NOT NULL
+   - Ensures field always has a value
+   - Cannot be left empty
+   - Used for: ID, Name, Email (required fields)
+
+2. UNIQUE
+   - Ensures all values are different
+   - Can have multiple UNIQUE columns per table
+   - NULL allowed (but only once traditionally)
+   - Used for: Email, Phone, Username
+
+3. PRIMARY KEY
+   - Uniquely identifies each record
+   - Cannot be NULL, must be UNIQUE
+   - Only one per table
+   - Used for: ID, Record identifier
+   - PRIMARY KEY = UNIQUE + NOT NULL
+
+4. CHECK
+   - Values must meet a condition
+   - Custom validation at database level
+   - Used for: Age > 0, Salary > 0, Percentage between 0-100
+
+5. DEFAULT
+   - Provides default value if none specified
+   - Used for: Status = 'Active', Department = 'CS'
+
+6. FOREIGN KEY
+   - References primary key of another table
+   - Creates relationships between tables
+   - Used for: Linking related tables
+
+Example:
+CREATE TABLE student (
+    student_id INT PRIMARY KEY,              -- NOT NULL + UNIQUE
+    email VARCHAR(50) UNIQUE NOT NULL,       -- UNIQUE + NOT NULL
+    age INT CHECK (age >= 15),               -- CHECK constraint
+    branch VARCHAR(10) DEFAULT 'CS',         -- DEFAULT constraint
+    dept_id INT,                             -- FOREIGN KEY
+    FOREIGN KEY (dept_id) REFERENCES department(dept_id)
+);
+```
+
+---
+
+### Q7: What happens if you try to insert a child record with non-existent parent ID?
+
+**Answer**:
+
+```
+If you try to insert a foreign key value that doesn't exist in the
+parent table, you get a FOREIGN KEY CONSTRAINT VIOLATION error.
+
+Example:
+
+Parent Table (Department):
+┌────────┐
+│ dept_id│
+├────────┤
+│ 201    │
+│ 202    │
+│ 203    │
+└────────┘
+
+Child Table (Faculty):
+Trying to insert:
+INSERT INTO faculty VALUES (1, 'Dr. Rajesh', 205);
+-- dept_id 205 doesn't exist in department table!
+
+ERROR:
+Cannot add or update a child row:
+a foreign key constraint fails
+
+Solution:
+1. Check valid dept_id values in parent table
+2. Only use existing parent IDs
+3. First insert parent record, then child
+
+Correct approach:
+INSERT INTO department VALUES (205, 'NewDept');  -- Create parent first
+INSERT INTO faculty VALUES (1, 'Dr. Rajesh', 205); -- Now insert child
+```
+
+---
+
+### Q8: Design a library management system with proper constraints and relationships.
+
